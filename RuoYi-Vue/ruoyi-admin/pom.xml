@@ -37,7 +37,7 @@
             <version>1.6.2</version>
         </dependency>
 
-        <!-- Mysql驱动包 -->
+         <!-- Mysql驱动包 -->
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
@@ -59,10 +59,6 @@
         <dependency>
             <groupId>com.ruoyi</groupId>
             <artifactId>ruoyi-generator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.ruoyi</groupId>
-            <artifactId>ruoyi-test</artifactId>
         </dependency>
 
     </dependencies>
@@ -92,7 +88,7 @@
                     <failOnMissingWebXml>false</failOnMissingWebXml>
                     <warName>${project.artifactId}</warName>
                 </configuration>
-            </plugin>
+           </plugin>
         </plugins>
         <finalName>${project.artifactId}</finalName>
     </build>

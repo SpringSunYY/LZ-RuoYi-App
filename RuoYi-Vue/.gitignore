@@ -1,6 +1,5 @@
 ######################################################################
 # Build Tools
-/ruoyi-test
 .gradle
 /build/
 !gradle/wrapper/gradle-wrapper.jar
