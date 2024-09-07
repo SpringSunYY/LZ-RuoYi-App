@@ -1,0 +1,228 @@
+<template>
+  <view class="container">
+    <view class="example">
+      <uni-forms ref="form" :model="form" labelWidth="80px">
+          #set($dictString=$dicts)
+#foreach($column in $columns)
+#set($field=$column.javaField)
+#if($column.insert && !$column.pk)
+#if(($column.usableColumn) || (!$column.superColumn))
+#set($parentheseIndex=$column.columnComment.indexOf("（"))
+#if($parentheseIndex != -1)
+    #set($comment=$column.columnComment.substring(0, $parentheseIndex))
+#else
+    #set($comment=$column.columnComment)
+#end
+#set($dictType=$column.dictType)
+#set($dictTypeData=$dictType.substring($dictType.lastIndexOf("_")+1,$dictType.length()))
+#if("" != $treeParentCode && $column.javaField == $treeParentCode)
+    <uni-forms-item label="${comment}" name="${field}"  #if($column.required)required#end >
+##      <ssha-dropdownSelect :search="true" label="label" v-model="form.${treeParentCode}" :localdata="${businessName}TreeOptions" placeholder="请选择${comment}">
+##      </ssha-dropdownSelect>
+      <cxk-dropdown-tree :dataOptions="${businessName}TreeOptions" v-model="form.${treeParentCode}" :defaultCheckedKeys="form.${treeParentCode}+''" labelField="${treeName}" valueField="${treeCode}" @change="handleTreeChange"></cxk-dropdown-tree>
+</uni-forms-item>
+#elseif($column.htmlType == "input")
+    <uni-forms-item label="${comment}" name="${field}" #if($column.required)required#end >
+      <uni-easyinput v-model="form.${field}" placeholder="请输入${comment}" />
+    </uni-forms-item>
+#elseif($column.htmlType == "select" && "" != $dictType)
+  <uni-forms-item label="${comment}" name="${field}" #if($column.required)required#end >
+    <uni-data-select v-model="form.${field}" :localdata="${field}SelectOptionsList"></uni-data-select>
+  </uni-forms-item>
+#elseif(($column.htmlType == "radio" || $column.htmlType == "checkbox") && "" != $dictType)
+  <uni-forms-item label="${comment}" name="${field}" #if($column.required)required#end >
+    <uni-data-checkbox v-model="form.${field}" :localdata="${field}SelectOptionsList" #if($column.htmlType == "checkbox")multiple#end />
+  </uni-forms-item>
+#elseif($column.htmlType == "datetime" || $column.htmlType == "date")
+  <uni-forms-item label="${comment}" name="${field}" #if($column.required)required#end >
+    <uni-datetime-picker type="${column.htmlType}" v-model="form.${field}" return-type="string" />
+  </uni-forms-item>
+    ##  上传，文本域等
+#elseif($column.htmlType == "imageUpload")
+  <uni-forms-item label="${comment}" name="${field}" #if($column.required)required#end >
+    <ImageUpload v-model="form.${field}"/>
+  </uni-forms-item>
+#elseif($column.htmlType == "fileUpload")
+  <uni-forms-item label="${comment}" name="${field}" #if($column.required)required#end >
+    <FileUpload v-model="form.${field}"/>
+  </uni-forms-item>
+#elseif($column.htmlType == "editor")
+  <uni-forms-item label="${comment}" name="${field}" #if($column.required)required#end >
+    <piaoyiEditor :values="form.${field}" @changes="${field}EditorContens" :maxlength="3000" :readOnly="false"/>
+  </uni-forms-item>
+#elseif($column.htmlType == "textarea")
+  <uni-forms-item label="${comment}" name="${field}" #if($column.required)required#end >
+  <uni-easyinput type="textarea" v-model="form.${field}" placeholder="请输入${comment}" />
+  </uni-forms-item>
+#end
+#end
+#end
+#end
+      </uni-forms>
+      <view class="button-group">
+        <button type="default" style="padding:0 3em;font-size:14px"  class="button" @click="reset">重置</button>
+        <button type="primary" style="padding:0 3em;font-size:14px"  class="button" @click="submit">提交</button>
+      </view>
+    </view>
+  </view>
+</template>
+
+#set($editorExist=false)
+#set($uploadExist=false)
+#foreach($column in $columns)
+    #if($column.htmlType == "editor")
+        #set($editorExist=true)
+    #end
+    #if($column.htmlType == "imageUpload" || $column.htmlType == "fileUpload")
+        #set($uploadExist=true)
+    #end
+#end
+
+<script>
+    import { add${BusinessName},get${BusinessName},list${BusinessName} } from "@/api/${moduleName}/${businessName}";
+    import cxkDropdownTree from '@/components/cxk-dropdown-tree/index.vue'
+    #if($editorExist)
+    import piaoyiEditor from '@/components/piaoyi-editor/components/piaoyi-editor/piaoyi-editor.vue';
+    #end
+    #if($uploadExist)
+    #end
+#if (!$dictString.isNotEmpty())
+import {getSelectDict} from "@/utils/dict";
+#end
+
+export default {
+components: {
+    #if($editorExist)
+      piaoyiEditor,
+    #end
+  cxkDropdownTree,
+},
+data() {
+  return {
+      #if (!$dictString.isNotEmpty())
+        //字典类型筛选options
+          #foreach($column in $columns)
+              #set($dictType=$column.dictType)
+              #set($javaField=$column.javaField)
+              #if($dictType != '')
+                      ${javaField}SelectOptionsList:[],
+                      ${javaField}Options:"$column.dictType",
+              #end
+          #end
+      #end
+    #if("" != $treeParentCode)
+        //下拉框树数据
+       ${businessName}TreeOptions:[],
+    #end
+    form: {},
+    rules: {
+        #foreach($column in $columns)
+            #if($column.required)
+            #set($parentheseIndex=$column.columnComment.indexOf("（"))
+            #if($parentheseIndex != -1)
+                #set($comment=$column.columnComment.substring(0, $parentheseIndex))
+            #else
+                #set($comment=$column.columnComment)
+            #end
+            $column.javaField: {
+                rules: [{ required: true, errorMessage: "$comment不能为空" }]
+            },
+##                #if($foreach.count != $columns.size()),#end
+            #end
+        #end
+    }
+  }
+},
+onLoad(option) {
+    #if (!$dictString.isNotEmpty())
+      //字典类型查询
+        #foreach($column in $columns)
+            #set($dictType=$column.dictType)
+            #set($javaField=$column.javaField)
+            #if($column.dictType != '')
+              getSelectDict(this.${javaField}Options).then(response => {
+                this.${javaField}SelectOptionsList = response;
+              });
+            #end
+        #end
+    #end
+    #if("" != $treeParentCode)
+      this.getTreeselect();
+      if(option.$treeParentCode){
+        this.reset();
+        this.form.$treeParentCode = option.$treeParentCode;
+      }
+    #end
+},
+onReady() {
+  this.#[[$refs]]#.form.setRules(this.rules)
+},
+methods: {
+  #if("" != $treeParentCode)
+      /** 查询${functionName}下拉树结构 */
+      getTreeselect() {
+        list${BusinessName}().then(response => {
+        const data = {${treeCode}: 0, ${treeName}:'顶级节点', children: []};
+        data.children = this.#[[$myUtils]]#.handleTree(response.data, "${treeCode}", "${treeParentCode}");
+        this.${businessName}TreeOptions.push(data)
+        });
+      },
+  #end
+  /* 提交*/
+  submit() {
+    console.log(this.form)
+    this.#[[$refs]]#.form.validate().then(res => {
+      add${BusinessName}(this.form).then(response => {
+        this.#[[$modal]]#.msgSuccess("新增成功")
+        setTimeout(() => {
+          // 返回到上一级父页面
+          this.#[[$tab]]#.navigateBack();
+        },500)
+      })
+    })
+  },
+  /* 表单重置*/
+  reset(){
+    this.form = {
+    #foreach ($column in $columns)
+    #if($column.htmlType == "checkbox")
+       $column.javaField: []#if($foreach.count != $columns.size()),#end
+    #elseif("" != $treeParentCode && $column.javaField == $treeParentCode)
+       $treeParentCode:"0",
+    #else
+       $column.javaField: undefined#if($foreach.count != $columns.size()),#end
+    #end
+    #end
+    };
+  },
+  //小程序中父子组件的v-model双向绑定deptId不生效，需主动设置值
+  handleTreeChange(values, currentItem) {
+    this.form.${treeParentCode} = values;
+  },
+        #foreach($column in $columns)
+            #if($column.htmlType == "editor")
+            //文本编辑器
+                ${column.javaField}EditorContens(e) {
+              this.form.$column.javaField = e.html
+            },
+            #end
+        #end
+}
+}
+</script>
+
+<style lang="scss">
+  page {
+    background-color: #ffffff;
+  }
+
+  .example {
+    padding: 15px;
+    background-color: #fff;
+  }
+  .button-group {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-around;
+  }
+</style>

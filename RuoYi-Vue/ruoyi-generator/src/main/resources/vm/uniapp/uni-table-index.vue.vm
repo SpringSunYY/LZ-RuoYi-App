@@ -1,0 +1,434 @@
+<template>
+  <view class="${tableName}_table_container">
+    <view>
+      <!-- 筛选弹框 -->
+      <fjj-condition ref='condition' @touchmove.stop :color="conditionColor" :list="screenList"
+                     :defaultValue="defaultValue" @result="resultConditon"/>
+      <!-- ${functionName}搜索 -->
+      <uni-section title=" ">
+        <uni-search-bar :focus="false" v-model="searchValue" @blur="searchBlur"
+                        placeholder="搜索${functionName}" @clear="searchClear" cancelButton="none">
+        </uni-search-bar>
+      </uni-section>
+    </view>
+    <view class="filter-bar">
+      <view class="filter-item">
+        <button size="mini" type="default" style="color:#ffba00;background-color:#fff8e6;
+					border-color:#000000" @click="delCheckbox"
+                v-if="checkPermi(['${moduleName}:${businessName}:remove'])">删除
+        </button>
+      </view>
+      <view class="filter-item" @click="open">
+        <button size="mini" type="default"
+                style="color:#ffffff;background-color:#007aff;border-color:#000000">筛选
+        </button>
+      </view>
+      <view class="filter-item">
+        <button size="mini" type="default"
+                style="color:#ff0000;background-color:#ffeded;border-color:#000000"
+                @click="addButton" v-if="checkPermi(['${moduleName}:${businessName}:add'])">新增
+        </button>
+      </view>
+    </view>
+    <view class="data-list">
+      <!-- ${functionName}列表 -->
+      <uni-table ref="table" :loading="loading" border stripe type="selection" emptyText="暂无更多数据"
+                 @selection-change="selectionChange">
+        <uni-tr>
+            #foreach($column in $columns)
+                #set($parentheseIndex=$column.columnComment.indexOf("（"))
+                #if($parentheseIndex != -1)
+                    #set($comment=$column.columnComment.substring(0, $parentheseIndex))
+                #else
+                    #set($comment=$column.columnComment)
+                #end
+                #if($column.list)
+                  <uni-th width="80" align="center">${comment}</uni-th>
+                #end
+            #end
+          <uni-th width="100" align="center">操作</uni-th>
+        </uni-tr>
+        <uni-tr v-for="(item, index) in ${businessName}List" :key="item.${pkColumn.javaField}">
+            #set($dictString=$dicts)
+            #foreach($column in $columns)
+                #set($javaField=$column.javaField)
+                #set($parentheseIndex=$column.columnComment.indexOf("（"))
+                #set($htmlType=$column.htmlType)
+                #set($dictType=$column.dictType)
+                #if($parentheseIndex != -1)
+                    #set($comment=$column.columnComment.substring(0, $parentheseIndex))
+                #else
+                    #set($comment=$column.columnComment)
+                #end
+                #if($column.list)
+                  <uni-td>
+                      #if($column.list &&$htmlType=="imageUpload")
+                        <view style="height: 80rpx; overflow: hidden;">
+                          <image-preview style="height: 100%; width: auto;" :value="item.${javaField}"
+                                         :show-all-images="false"/>
+                        </view>
+                      #elseif($column.list &&$htmlType=="datetime")
+                        <view align="center">{{ item.${javaField} }}</view>
+                      #elseif($column.list &&$dictType!="")
+                                <view align="center">
+                                  <dict-tag :options="${javaField}OptionsList" :value="item.${javaField}"/>
+                                </view>
+                      #elseif($column.list)
+                        <view align="center">{{ item.${javaField} }}</view>
+                      #end
+                  </uni-td>
+                #end
+            #end
+          <uni-td>
+            <view class="uni-group">
+              <uni-icons type="compose" color="blue" size="24" @click="editButton(item)"
+                         v-if="checkPermi(['${moduleName}:${businessName}:edit'])"/>
+              <uni-icons type="trash-filled" color="blue" size="24" @click="deleteButton(item)"
+                         v-if="checkPermi(['${moduleName}:${businessName}:remove'])"/>
+            </view>
+          </uni-td>
+        </uni-tr>
+      </uni-table>
+    </view>
+    <view>
+      <uni-section title=" " padding>
+        <uni-pagination :total="total" :pageSize="queryParams.pageSize" :current="queryParams.pageNum"
+                        @change="pageChange"/>
+      </uni-section>
+    </view>
+  </view>
+</template>
+
+<script>
+  import fjjCondition from '@/components/fjj-condition/fjj-condition.vue';
+  import {list${BusinessName}, del${BusinessName}} from "@/api/${moduleName}/${businessName}";
+  import {showConfirm} from '@/utils/common';
+  import {checkPermi} from "@/utils/permission";// 权限工具类
+      #if (!$dictString.isNotEmpty())
+      import {getDict,getSelectDict} from "@/utils/dict";
+      #end
+  export default {
+    components: {
+      fjjCondition
+    },
+    data() {
+      return {
+          #if (!$dictString.isNotEmpty())
+              #foreach($column in $columns)
+                  #set($comment=$column.columnComment)
+                  #set($dictType=$column.dictType)
+                  #set($javaField=$column.javaField)
+                  #if($dictType != '')
+                    //${comment}字典类型筛选options
+                          ${javaField}OptionsList:[],
+                          ${javaField}SelectOptionsList:[],
+                          ${javaField}Options:"$column.dictType",
+                  #end
+              #end
+          #end
+        //${functionName}搜索
+        searchValue: '',
+        //筛选弹框
+        conditionColor: '#4D7BFE',
+        screenList: [],
+        defaultValue: {},
+        // 查询参数
+        queryParams: {
+          pageNum: 1, //当前页，
+          pageSize: 5, //每页数量
+            #foreach ($column in $columns)
+                #if($column.query)
+                        $column.javaField: undefined#if($foreach.count != $columns.size()),#end
+                #end
+            #end
+        },
+        //列表数据
+        loading: false,
+        selectedIndexs: [],
+              ${businessName}List: [],
+        total: 0,  //总条数
+        // current: 1,//初始化当前页为第一页
+        //添加按钮
+        horizontal: 'right',
+        vertical: 'bottom',
+        popMenu: false
+      }
+    },
+    onShow(options) {//监听页面显示，页面每次出现在屏幕上都触发，包括从下级页面点返回露出当前页面
+      this.getList();
+    },
+    onLoad() {
+        #if (!$dictString.isNotEmpty())
+            #foreach($column in $columns)
+                #set($comment=$column.columnComment)
+                #set($dictType=$column.dictType)
+                #set($javaField=$column.javaField)
+                #if($column.dictType != '')
+                  //${comment}字典类型查询
+                  getDict(this.${javaField}Options).then(response => {
+                    this.${javaField}OptionsList = response;
+                  });
+                  getSelectDict(this.${javaField}Options).then(response => {
+                    this.${javaField}SelectOptionsList = response;
+                  });
+                #end
+            #end
+        #end
+      //设置筛选条件
+      setTimeout(() => {
+        this.setScreenData();
+      }, 500)
+      this.selectedIndexs = [];
+    },
+    mounted() {
+    },
+    methods: {
+      checkPermi,
+      //打开筛选面板
+      open() {
+        this.#[[$refs]]#.condition.openPopup()
+      },
+      //确认筛选条件并开始搜索
+      resultConditon(obj) {
+        for (var key in obj.str_result) {
+          this.queryParams[key] = obj.str_result[key];
+        }
+        #foreach ($column in $columns)
+        #if($column.htmlType == "datetime" && $column.queryType == "BETWEEN")
+        this.queryParams.params = {};
+        #break
+        #end
+        #end
+        #foreach ($column in $columns)
+        #if($column.htmlType == "datetime" && $column.queryType == "BETWEEN")
+        #set($javaField=$column.javaField)
+        #set($AttrName=$javaField.substring(0,1).toUpperCase() + ${javaField.substring(1)})
+        if (obj.str_result != null && obj.str_result.${javaField} != null && obj.str_result.${javaField} !== '') {
+          this.queryParams.params["begin${AttrName}"] = obj.str_result.begin${AttrName};
+          this.queryParams.params["end${AttrName}"] = obj.str_result.end${AttrName};
+        }
+        #end
+        #end
+        console.log(this.queryParams)
+        this.getList();
+      },
+      //搜索框失去焦点，搜索${functionName}
+      searchBlur(res) {
+        this.queryParams.${pkColumn.javaField} = res.value;
+        this.getList();
+      },
+      //搜索框点击清除(X按钮)
+      searchClear(res) {
+        this.queryParams.${pkColumn.javaField} = "";
+        this.getList();
+      },
+      //刷新
+      refresh() {
+        this.queryParams = {
+          pageNum: 1, //当前页，
+          pageSize: 5, //每页数量
+            #foreach($column in $columns)
+                #if($column.query)
+                $column.javaField:undefined#if($foreach.count != $columns.size()), #end
+                #end
+            #end
+        }
+        this.getList();
+      },
+      /** 查询${functionName}列表 */
+      getList() {
+        this.loading = true;
+        list${BusinessName}(this.queryParams).then(response => {
+              this.${businessName}List = response.rows;
+              this.total = response.total;
+              this.loading = false;
+            }
+        );
+      },
+      //分页变化事件
+      pageChange(res) {
+        //清空复选框
+        this.$refs.table.clearSelection()
+        this.selectedIndexs.length = 0
+        this.queryParams.pageNum = res.current
+        this.getList();
+      },
+      //设置筛选数据
+      setScreenData() {
+          this.screenList = [
+          #foreach($column in $columns)
+              #if($column.query)
+                  #set($javaField=$column.javaField)
+                  #set($dictType = $column.dictType)
+                  #set($dictTypeData = $dictType.substring($dictType.lastIndexOf("_") + 1, $dictType.length()))
+                  #set($parentheseIndex = $column.columnComment.indexOf("（"))
+                  #if($parentheseIndex != -1)
+                      #set($comment = $column.columnComment.substring(0, $parentheseIndex))
+                  #else
+                      #set($comment = $column.columnComment)
+                  #end
+                  #if($column.htmlType == "input")
+                    {
+                      'title': '$comment',
+                      'type': '$column.htmlType',
+                      'key': '${column.javaField}'
+                    },
+                  #elseif(($column.htmlType == "datetime" || $column.htmlType == "date") && $column.queryType !=
+                      "BETWEEN")
+                    {
+                      'title': '$comment',
+                      'type': '$column.htmlType',
+                      'key': '${column.javaField}'
+                    },
+                  #elseif($column.htmlType == "datetime" && $column.queryType == "BETWEEN")
+                  #set($AttrName=$column.javaField.substring(0,1).toUpperCase() + ${column.javaField.substring(1)})
+                    {
+                    'title': '$comment',
+                    'type': 'rangetime',
+                    'key': '$javaField',
+                    'minName':'begin${AttrName}',
+                    'maxName':'end${AttrName}'
+                    },
+                    #elseif($column.htmlType == "date" && $column.queryType == "BETWEEN")
+                    #set($AttrName=$column.javaField.substring(0,1).toUpperCase() + ${column.javaField.substring(1)})
+                    {
+                    'title': '$comment',
+                    'type': 'range',
+                    'key': '$javaField',
+                    'minName':'begin${AttrName}',
+                    'maxName':'end${AttrName}'
+                    },
+                  #elseif(($column.htmlType == "select"
+                  || $column.htmlType == "radio" || $column.htmlType == "checkbox") && "" != ${column.dictType}
+                  )
+                    {
+                      'title':'$comment',
+                      'type':'$column.htmlType',
+                      'key':'${column.javaField}',
+                      'detailList':this.${javaField}SelectOptionsList
+                    },
+                  #elseif($column.htmlType == "rangenumber")
+                    {
+                      'title': '$comment',
+                      'type' : '$column.htmlType',
+                      'key': '${column.javaField}'
+                    },
+                  #end
+              #end
+          #end
+      ];
+      },
+      //编辑
+      editButton(item) {
+        this.#[[$tab]]#.navigateTo('/pages/${moduleName}/${businessName}/uni-edit?${pkColumn.javaField}=' + item.${pkColumn.javaField});
+      },
+      //删除
+      deleteButton(item) {
+        showConfirm('是否确认删除${functionName}编号为"' + item.${pkColumn.javaField} +'"的数据项？').then(res => {
+          if (res.confirm) {
+            del${BusinessName}(item.${pkColumn.javaField}
+          ).then(response => {
+              this.#[[$modal]]#.msgSuccess("删除成功");
+              //清空复选框
+              this.$refs.table.clearSelection()
+              this.selectedIndexs.length = 0
+              //重新从第一页开始加载
+              this.queryParams.pageNum = 1;//查询页面也为第一页
+              this.getList();
+            })
+          }
+        })
+      },
+      //新增
+      addButton() {
+        this.#[[$tab]]#.navigateTo('/pages/${moduleName}/${businessName}/uni-add');
+      },
+      // 多选
+      selectionChange(e) {
+        this.selectedIndexs = e.detail.index
+      },
+      // 多选处理
+      selectedItems() {
+        return this.selectedIndexs.map(i => this.${businessName}List[i].${pkColumn.javaField})
+      },
+      //批量删除
+      delCheckbox() {
+        if (this.selectedItems() && this.selectedItems().length > 0) {
+          showConfirm('是否确认删除${functionName}编号为"' + this.selectedItems().join(",") + '"的数据项？').then(res => {
+            if (res.confirm) {
+              del${BusinessName}(this.selectedItems().join(",")).then(response => {
+                this.$modal.msgSuccess("删除成功");
+                //清空复选框
+                this.$refs.table.clearSelection()
+                this.selectedIndexs.length = 0
+                //重新从第一页开始加载
+                this.queryParams.pageNum = 1;//查询页面也为第一页
+                this.getList();
+              })
+            }
+          })
+        }
+      }
+    }
+  }
+</script>
+
+<style lang="scss">
+  page {
+    height: 100%;
+  }
+  .${tableName}_table_container{
+    .container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 筛选栏样式开始 */
+    .filter-bar {
+      /* height: 100rpx; */
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      height: 50px;
+      background-color: #fff;
+      border-bottom: 1px solid #eee;
+      padding: 0 10px;
+      /* position: sticky; */
+    }
+
+    .filter-item {
+      display: flex;
+      align-items: center;
+      font-size: 16px;
+      color: #333;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .filter-item.active {
+      color: #5500ff;
+    }
+
+    .filter-item .iconfont {
+      font-size: 12px;
+      margin-left: 5px;
+    }
+
+    /* 筛选栏样式结束 */
+
+    /* 数据列表样式 */
+    .data-list {
+      overflow-y: auto;
+      flex: 1;
+      width: 100%;
+    }
+
+    /* 小图样式 */
+    .icon-triangle {
+      width: 16rpx;
+      height: 16rpx;
+      margin-left: 10rpx;
+    }
+  }
+</style>

@@ -1,0 +1,382 @@
+<template>
+	<view class="${tableName}_tree_index_container">
+		<view >
+		<!-- 筛选弹框 -->
+		<fjj-condition ref='condition' @touchmove.stop :color="conditionColor" :list="screenList" :defaultValue="defaultValue" @result="resultConditon" />
+		<!-- ${functionName}搜索 -->
+		<uni-section title=" ">
+			<uni-search-bar :focus="false" v-model="searchValue" @blur="searchBlur"
+							placeholder="搜索${functionName}" @clear="searchClear" cancelButton="none">
+			</uni-search-bar>
+		</uni-section>
+		</view>
+		<view class="filter-bar" >
+			<view class="filter-item" >
+				<button size="mini" type="default"
+						style="color:#ff0000;background-color:#ffeded;border-color:#000000"
+						@click="addButtonOpt" v-if="checkPermi(['${moduleName}:${businessName}:add'])" >新增</button>
+			</view>
+			<view class="filter-item" @click="open">
+				<button size="mini" type="default"
+						style="color:#ffffff;background-color:#007aff;border-color:#000000">筛选</button>
+			</view>
+			<view class="filter-item" >
+				<button size="mini" type="default"
+						style="color:#ffba00;background-color:#fff8e6;border-color:#000000" @click="refresh">刷新</button>
+			</view>
+		</view>
+		<view class="data-list" >
+			<!-- ${functionName}列表 -->
+			<n-table
+					:tableOpt="{stickSide:false,fontSize:14,textAlign: 'center'}"
+					:tableHeight="0"
+					:tableData="${businessName}List"
+					:columns="columns"
+					colKey="dataIndex"
+                    idKey="${treeCode}"
+					:hasPermiArr="['${moduleName}:${businessName}:add','${moduleName}:${businessName}:edit','${moduleName}:${businessName}:remove']"
+                    :iconsButStyle="['plus-filled','compose','trash-filled']"
+                    :showButton="['add','edit','delete']"
+                    @editButton="editButton"
+                    @addButton="addButton"
+                    @deleteButton="deleteButton"
+			></n-table>
+		</view>
+	</view>
+</template>
+
+<script>
+	import fjjCondition from '@/components/fjj-condition/fjj-condition.vue';
+	import { list${BusinessName}, del${BusinessName}} from "@/api/${moduleName}/${businessName}";
+    import {showConfirm} from '@/utils/common';
+	import {checkPermi}  from "@/utils/permission";// 权限工具类
+		#set($dictString=$dicts)
+		#if (!$dictString.isNotEmpty())
+		import {getDict,getSelectDict} from "@/utils/dict";
+		#end
+	export default {
+		components: {
+			fjjCondition
+		},
+		data() {
+			return {
+				#if (!$dictString.isNotEmpty())
+					#foreach($column in $columns)
+						#set($comment=$column.columnComment)
+						#set($dictType=$column.dictType)
+						#set($javaField=$column.javaField)
+						#if($dictType != '')
+							//${comment}字典类型筛选options
+								${javaField}OptionsList:[],
+								${javaField}SelectOptionsList:[],
+								${javaField}Options:"$column.dictType",
+						#end
+					#end
+				#end
+				//树列表展示的字段名
+				columns: [],
+				//${functionName}状态搜索
+				searchValue: '',
+				//筛选弹框
+				conditionColor: '#4D7BFE',
+				screenList: [],
+				defaultValue: {},
+				// 查询参数
+				queryParams: {
+					#foreach ($column in $columns)
+					#if($column.query)
+						$column.javaField: undefined#if($foreach.count != $columns.size()),#end
+					#end
+					#end
+				},
+				//列表数据
+				${businessName}List:[],
+			}
+		},
+		onShow(options) {//监听页面显示，页面每次出现在屏幕上都触发，包括从下级页面点返回露出当前页面
+			this.getList();
+		},
+		onLoad () {
+			#if (!$dictString.isNotEmpty())
+				#foreach($column in $columns)
+					#set($comment=$column.columnComment)
+					#set($dictType=$column.dictType)
+					#set($javaField=$column.javaField)
+					#if($column.dictType != '')
+						//${comment}字典类型查询
+						getDict(this.${javaField}Options).then(response => {
+							this.${javaField}OptionsList = response;
+						});
+						getSelectDict(this.${javaField}Options).then(response => {
+							this.${javaField}SelectOptionsList = response;
+						});
+					#end
+				#end
+			#end
+
+		//设置筛选条件
+		setTimeout(() => {
+			this.setScreenData();
+		},500)
+		},
+		watch: {
+		#if (!$dictString.isNotEmpty())
+			//监听字典，如果字典发生改变重新加载数据
+			#foreach($column in $columns)
+				#set($comment=$column.columnComment)
+				#set($dictType=$column.dictType)
+				#set($javaField=$column.javaField)
+				#if($column.dictType != '')
+					${javaField}OptionsList(newVal) {
+						this.initializeColumns();
+					},
+				#end
+			#end
+		#end
+		},
+		mounted() {
+			this.initializeColumns()
+		},
+		methods: {
+			checkPermi,
+			//打开筛选面板
+			open(){
+				this.$refs.condition.openPopup()
+			},
+			//确认筛选条件并开始搜索
+			resultConditon(obj) {
+				for (var key in obj.str_result) {
+					this.queryParams[key] = obj.str_result[key];
+				}
+				#foreach ($column in $columns)
+					#if($column.htmlType == "datetime" && $column.queryType == "BETWEEN")
+						this.queryParams.params = {};
+						#break
+					#end
+				#end
+				#foreach ($column in $columns)
+					#if($column.htmlType == "datetime" && $column.queryType == "BETWEEN")
+						#set($javaField=$column.javaField)
+						#set($AttrName=$javaField.substring(0,1).toUpperCase() + ${javaField.substring(1)})
+						if (obj.str_result != null && obj.str_result.${javaField} != null && obj.str_result.${javaField} !== '') {
+							this.queryParams.params["begin${AttrName}"] = obj.str_result.begin${AttrName};
+							this.queryParams.params["end${AttrName}"] = obj.str_result.end${AttrName};
+						}
+					#end
+				#end
+				console.log(this.queryParams)
+				this.getList();
+			},
+			//搜索框失去焦点，搜索${functionName}状态
+			searchBlur(res) {
+				this.queryParams.${businessName}Name = res.value;
+				this.getList();
+			},
+			//搜索框点击清除(X按钮)
+			searchClear(res) {
+				this.queryParams.${businessName}Name = "";
+				this.getList();
+			},
+			//刷新
+			refresh(){
+				this.queryParams = {
+					#foreach ($column in $columns)
+						#if($column.query)
+							$column.javaField: undefined#if($foreach.count != $columns.size()),#end
+						#end
+					#end
+				}
+				this.getList();
+			},
+			/** 查询${functionName}列表 */
+			getList() {
+				list${BusinessName}(this.queryParams).then(response => {
+					this.${businessName}List = this.#[[$myUtils]]#.handleTree(response.data, "${treeCode}", "${treeParentCode}");
+					}
+			    );
+			},
+			//设置筛选数据
+			setScreenData(){
+				this.screenList = [
+					#foreach($column in $columns)
+						#if($column.query)
+							#set($javaField=$column.javaField)
+							#set($dictType=$column.dictType)
+					        #set($javaField=$column.javaField)
+							#set($parentheseIndex=$column.columnComment.indexOf("（"))
+							#if($parentheseIndex != -1)
+								#set($comment=$column.columnComment.substring(0, $parentheseIndex))
+							#else
+								#set($comment=$column.columnComment)
+							#end
+							#if($column.htmlType == "input")
+								{
+									'title': '$comment',
+									'type': '$column.htmlType',
+									'key': '$javaField'
+								},
+							#elseif(($column.htmlType == "datetime" || $column.htmlType == "date") && $column.queryType != "BETWEEN")
+								{
+									'title': '$comment',
+									'type': '$column.htmlType',
+									'key': '$javaField'
+								},
+							#elseif($column.htmlType == "datetime" && $column.queryType == "BETWEEN")
+							#set($AttrName=$column.javaField.substring(0,1).toUpperCase() + ${column.javaField.substring(1)})
+								{
+									'title': '$comment',
+									'type': 'rangetime',
+									'key': '$javaField',
+									'minName':'begin${AttrName}',
+									'maxName':'end${AttrName}'
+								},
+							#elseif($column.htmlType == "date" && $column.queryType == "BETWEEN")
+							#set($AttrName=$column.javaField.substring(0,1).toUpperCase() + ${column.javaField.substring(1)})
+								{
+									'title': '$comment',
+									'type': 'range',
+									'key': '$javaField',
+									'minName':'begin${AttrName}',
+									'maxName':'end${AttrName}'
+								},
+							#elseif(($column.htmlType == "select"
+							|| $column.htmlType == "radio" || $column.htmlType == "checkbox") && "" != ${column.dictType})
+								{
+									'title': '$comment',
+									'type': '$column.htmlType',
+									'key': '$javaField',
+									'detailList': this.${javaField}SelectOptionsList
+								},
+							#elseif($column.htmlType == "rangenumber")
+								{
+									'title': '$comment',
+									'type': '$column.htmlType',
+									'key': '$javaField'
+								},
+							#end
+						#end
+					#end
+				];
+			},
+			//初始化树列表
+			initializeColumns(){
+				//树列表展示的字段名
+				this.columns = [
+					#set($iterateCount = 0)
+					#foreach($column in $columns)
+					#set($javaField=$column.javaField)
+					#set($parentheseIndex=$column.columnComment.indexOf("（"))
+					#set($htmlType=$column.htmlType)
+					#set($dictType=$column.dictType)
+					#if($parentheseIndex != -1)
+					#set($comment=$column.columnComment.substring(0, $parentheseIndex))
+					#else
+					#set($comment=$column.columnComment)
+					#end
+					#if(!$column.pk && $column.list)
+					#set($iterateCount = $iterateCount + 1)
+					#if($column.list && $dictType!="")
+					{
+						"title": "$comment",
+						"dataIndex": "$javaField" ,
+						"isTag": true,
+						"optionsList": this.${javaField}OptionsList
+					},
+					#elseif($column.list &&$htmlType== "imageUpload")
+					{
+					"title": "$comment",
+					"dataIndex": "$javaField",
+					"isImage": true
+					},
+					#else
+				{
+					"title": "$comment",
+					"dataIndex": "$javaField" ,
+					"textAlign": 'left',
+					"width": 100,
+				},
+				#end
+				#end
+				#end
+				{
+					"title": "操作",
+						"dataIndex": "${pkColumn.javaField}",
+						"width": 100
+				}]
+			},
+			//新增
+			addButton(row,col){
+                this.#[[$tab]]#.navigateTo('/pages/${moduleName}/${businessName}/uni-tree-add?${treeParentCode}='+row.${treeCode});
+			},
+			//编辑
+			editButton(row,col){
+				this.#[[$tab]]#.navigateTo('/pages/${moduleName}/${businessName}/uni-tree-edit?${pkColumn.javaField}='+row.${pkColumn.javaField});
+			},
+			//删除
+			deleteButton(row,col){
+				showConfirm('是否确认删除${functionName}编号为"'+row.${pkColumn.javaField}+'"的数据项？').then(res => {
+					if (res.confirm) {
+						del${BusinessName}(row.${pkColumn.javaField}).then(response => {
+							this.#[[$modal]]#.msgSuccess("删除成功")
+							this.getList();
+						})
+					}
+				})
+			},
+			//新增
+			addButtonOpt(){
+				this.#[[$tab]]#.navigateTo('/pages/${moduleName}/${businessName}/uni-tree-add');
+			}
+		}
+	}
+</script>
+
+<style lang="scss">
+	page{
+		height: 100%;
+	}
+	.${tableName}_tree_index_container{
+		height: 100%;
+		display: flex;
+		flex-direction: column;
+		/* 筛选栏样式开始 */
+		.filter-bar{
+			/* height: 100rpx; */
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			height: 50px;
+			background-color: #fff;
+			border-bottom: 1px solid #eee;
+			padding: 0 10px;
+			/* position: sticky; */
+		}
+		.filter-item {
+			display: flex;
+			align-items: center;
+			font-size: 16px;
+			color: #333;
+			position: relative;
+			cursor: pointer;
+		}
+
+		.filter-item.active {
+			color: #5500ff;
+		}
+		/* 筛选栏样式结束 */
+
+		/* 数据列表样式 */
+		.data-list{
+			overflow-y: auto;
+			flex: 1;
+			width: 100%;
+		}
+		/* 小图样式(倒三角) */
+		.icon-triangle {
+			width: 16rpx;
+			height: 16rpx;
+			margin-left: 10rpx;
+		}
+	}
+
+</style>

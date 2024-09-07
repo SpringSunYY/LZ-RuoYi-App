@@ -35,7 +35,7 @@
     margin-top: -6px;
     right: 30rpx;
   }
-  
+
   .list-cell {
     position: relative;
     width: 100%;
@@ -44,15 +44,15 @@
     color: #333;
     padding: 26rpx 30rpx;
   }
-  
+
   .list-cell:first-child {
     border-radius: 8rpx 8rpx 0 0;
   }
-  
+
   .list-cell:last-child {
     border-radius: 0 0 8rpx 8rpx;
   }
-  
+
   .list-cell::after {
     content: '';
     position: absolute;
@@ -65,22 +65,22 @@
     left: 0;
     pointer-events: none;
   }
-  
-  
+
+
   .menu-list {
     margin: 15px 15px;
-  
+
     .menu-item-box {
       width: 100%;
       display: flex;
       align-items: center;
-  
+
       .menu-icon {
         color: #007AFF;
         font-size: 16px;
         margin-right: 5px;
       }
-      
+
       .text-right {
         margin-left: auto;
         margin-right: 34rpx;
@@ -88,3 +88,24 @@
       }
     }
   }
+uni-checkbox .uni-checkbox-input {
+  border-radius: 50%;
+  border: 1rpx solid rgb(149, 149, 151);
+}
+
+uni-checkbox .uni-checkbox-input.uni-checkbox-input-checked {
+  border: 1rpx solid rgb(33, 177, 255);
+  background-color: rgb(33, 177, 255);
+}
+
+uni-checkbox .uni-checkbox-wrapper {
+  width: 100%;
+}
+
+uni-checkbox .uni-checkbox-input.uni-checkbox-input-checked:before{
+  color: #FFFFFF;
+}
+
+uni-checkbox:not([disabled]) .uni-checkbox-input:hover{
+  border-color: transparent;
+}
