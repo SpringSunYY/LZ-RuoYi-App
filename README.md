@@ -1,6 +1,6 @@
 # LZ-RuoYi-App
 
-RuoYi-App代码生成器，生成app前端增删改查，在RuoYi-App、RuoYi-Vue上进行二次开发——[LZ-RuoYi-App](https://github.com/SpringSunYY/LZ-RuoYi-App)
+RuoYi-App代码生成器，生成app前端单表和树表增删改查，在RuoYi-App、RuoYi-Vue上进行二次开发——[LZ-RuoYi-App](https://github.com/SpringSunYY/LZ-RuoYi-App)，你也可以根据教程自行实现。
 
 ![logo](./assets/up-43e3941654fa3054c9684bf53d1b1d356a1.png)
 
