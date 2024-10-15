@@ -161,6 +161,20 @@ export const dynamicRoutes = [
         meta: { title: '修改生成配置', activeMenu: '/tool/gen' }
       }
     ]
+  },
+  {
+    path: '/tool/gen-add-value',
+    component: Layout,
+    hidden: true,
+    permissions: ['tool:gen:edit'],
+    children: [
+      {
+        path: 'index/:tableId(\\d+)',
+        component: () => import('@/views/tool/gen/genValue'),
+        name: 'GenAddValue',
+        meta: { title: '生成表数据', activeMenu: '/tool/gen' }
+      }
+    ]
   }
 ]
 
