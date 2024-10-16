@@ -83,3 +83,11 @@ export function synchDb(tableName) {
     method: 'get'
   })
 }
+// 代码生成插入数据
+export function genValue(data) {
+  return request({
+    url: '/tool/gen/genValue',
+    method: 'post',
+    data: data
+  })
+}
