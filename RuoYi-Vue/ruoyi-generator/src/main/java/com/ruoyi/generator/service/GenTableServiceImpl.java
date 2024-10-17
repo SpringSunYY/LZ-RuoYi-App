@@ -493,7 +493,7 @@ public class GenTableServiceImpl implements IGenTableService {
 
                 //如果是主键
                 if (column.isPk()) {
-                    value = IdUtils.fastSimpleUUID();
+                    value = IdUtils.randomUUID();
                 }
 
                 // 如果字段是唯一的，添加去重逻辑（如加上当前遍历的 i）
