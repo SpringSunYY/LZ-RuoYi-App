@@ -242,6 +242,6 @@ public class GenController extends BaseController {
     @PostMapping("/genValue")
     public AjaxResult genValue(@Validated @RequestBody GenInfo genInfo) {
         System.out.println("genInfo = " + genInfo);
-        return null;
+        return toAjax(genTableService.genValue(genInfo));
     }
 }

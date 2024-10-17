@@ -13,19 +13,32 @@ import java.util.List;
  * @Version: 1.0
  */
 public class GenInfo {
+
+    /**
+     * 表名
+     */
     private String tableName;
+
+    /**
+     * 生成数量
+     */
     private Long genNumbers;
+
+    /**
+     * 字段信息
+     */
     private List<Column> tableColumnValues;
 
-    private static class Column {
-        private String columnName;
-        private String columnComment;
-        private String columnType;
-        private boolean pk;
-        private String javaType;
-        private String javaField;
-        private boolean required;
-        private int isSole;
+    public static class Column {
+        private String columnName;  //字段名
+        private String columnComment;   //字段描述
+        private String columnType;  //字段类型
+        private boolean pk;  //主键
+        private String javaType;    //Java类型
+        private String javaField;   //Java字段
+        private boolean required;   //是否必须
+        private int isSole;     //是否唯一
+        private String value;   //值
 
         public String getColumnName() {
             return columnName;
@@ -91,6 +104,14 @@ public class GenInfo {
             this.isSole = isSole;
         }
 
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(String value) {
+            this.value = value;
+        }
+
         @Override
         public String toString() {
             return "\nColumn{" +
@@ -102,6 +123,7 @@ public class GenInfo {
                     ", javaField='" + javaField + '\'' +
                     ", required=" + required +
                     ", isSole=" + isSole +
+                    ", value='" + value + '\'' +
                     '}';
         }
     }

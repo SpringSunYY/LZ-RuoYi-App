@@ -173,16 +173,16 @@ export default {
     /** 提交按钮 */
     submitForm() {
       //校验是否有必须需要值但是为空的
-      for (const index in this.columns) {
-        const column = this.columns[index]
+      for (const index in this.tableColumnValues) {
         const value = this.tableColumnValues[index]?.value // 获取对应的值
+        const column = this.tableColumnValues[index] // 获取对应的列信息
         if (column.required && (!value || value.trim() === '') && !column.pk) {
           // 如果 required 为 true 且值不存在或为空
           this.$message.error(`${column.columnComment}不能为空`)
           return // 直接返回
         }
       }
-      this.genInfo.tableColumnValues = this.columns
+      this.genInfo.tableColumnValues = this.tableColumnValues
       console.log(this.genInfo)
       genValue(this.genInfo).then(res => {
         this.$message.success('成功')
