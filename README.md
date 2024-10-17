@@ -1,12 +1,18 @@
 # LZ-RuoYi-App
 
-RuoYi-App代码生成器，生成app前端单表和树表增删改查，在RuoYi-App、RuoYi-Vue上进行二次开发——[LZ-RuoYi-App](https://github.com/SpringSunYY/LZ-RuoYi-App)，你也可以根据教程自行实现。
+RuoYi-App代码生成器，生成app前端单表和树表增删改查，自定义批量插入数据，在RuoYi-App、RuoYi-Vue上进行二次开发——[LZ-RuoYi-App](https://github.com/SpringSunYY/LZ-RuoYi-App)，你也可以根据教程自行实现。
 
 其中也新做了一些组件，比如文件上传、图片上传、图片预览，集成富文本等组件，下载即可自己使用。
 
 方便自己在做一些app的时候，可以生成一些基本的数据进行管理，不用自己新写页面。
 
 ![logo](./assets/up-43e3941654fa3054c9684bf53d1b1d356a1.png)
+
+![1](./assets/1.png)
+
+![2](./assets/2.png)
+
+#   LZ-RuoYi-App-v1.1.0
 
 ## 使用教程
 
@@ -265,11 +271,15 @@ uni-checkbox:not([disabled]) .uni-checkbox-input:hover{
 
 如果组件不适合你，可以自己修改，同时欢迎大家一起修改，找到bug解决bug。
 
-# RuoYi v1.1.0
+#  LZ-RuoYi-App-v1.1.0
+
+批量插入数据和web网页生成的优化
+
+
+
+# RuoYi -APP
 
 #### 基于UniApp开发的轻量级移动端框架
-
-[![img](./assets/star.svg+xml)](https://gitee.com/y_project/RuoYi-App/stargazers) [![img](./assets/RuoYi-v1.1.0-brightgreen.svg+xml)](https://gitee.com/y_project/RuoYi-App) [![img](./assets/apistatus.svg+xml)](https://gitee.com/y_project/RuoYi-App/blob/master/LICENSE)
 
 ## 平台简介
 

@@ -241,7 +241,6 @@ public class GenController extends BaseController {
     @Log(title = "代码生成插入数据", businessType = BusinessType.INSERT)
     @PostMapping("/genValue")
     public AjaxResult genValue(@Validated @RequestBody GenInfo genInfo) {
-        System.out.println("genInfo = " + genInfo);
         return toAjax(genTableService.genValue(genInfo));
     }
 }

@@ -470,7 +470,6 @@ public class GenTableServiceImpl implements IGenTableService {
         String tableName = genInfo.getTableName();
         StringBuilder sql = new StringBuilder();
         StringBuilder columns = new StringBuilder();
-        Set<String> uniqueValues = new HashSet<>();
 
         // 构建列名部分
         sql.append("INSERT INTO ").append(tableName).append(" (");
@@ -493,18 +492,17 @@ public class GenTableServiceImpl implements IGenTableService {
 
                 //如果是主键
                 if (column.isPk()) {
-                    value = IdUtils.randomUUID();
+                    value = String.valueOf(IdUtils.snowflakeId());
                 }
 
                 // 如果字段是唯一的，添加去重逻辑（如加上当前遍历的 i）
                 if (column.getIsSole() == 1) {
                     value = value + "_" + i; // 加上当前遍历的 i 来防止重复
                 }
-
-                // 根据字段类型处理值
-                if ("String".equalsIgnoreCase(column.getJavaType())) {
+                //添加数据
+                if (StringUtils.isNotEmpty(value)) {
                     values.append("'").append(value).append("'");
-                } else {
+                }else {
                     values.append(value);
                 }
 
@@ -522,9 +520,12 @@ public class GenTableServiceImpl implements IGenTableService {
         }
 
         sql.append(";");
-        System.out.println("sql = " + sql.toString());
-        return 0;
+        String sqlString = sql.toString();
+        try {
+            return genTableMapper.createTable(sqlString);
+        } catch (Exception e) {
+            System.out.println( e.getMessage());
+            throw new RuntimeException("生成数据失败，请检查数据是否符合数据库内容！！！");
+        }
     }
-
-
 }
