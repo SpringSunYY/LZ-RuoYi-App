@@ -271,7 +271,7 @@ uni-checkbox:not([disabled]) .uni-checkbox-input:hover{
 
 如果组件不适合你，可以自己修改，同时欢迎大家一起修改，找到bug解决bug。
 
-#  LZ-RuoYi-App-v1.1.0
+#  LZ-RuoYi-App-v2.1.0
 
 批量插入数据和web网页生成的优化
 

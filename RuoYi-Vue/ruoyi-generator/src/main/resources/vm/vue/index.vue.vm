@@ -137,6 +137,19 @@
           <image-preview :src="scope.row.${javaField}" :width="50" :height="50"/>
         </template>
       </el-table-column>
+#elseif($column.list && $column.htmlType == "fileUpload")
+      <el-table-column label="${comment}" align="center" prop="${javaField}" width="100">
+        <template slot-scope="scope">
+          <el-link v-show="scope.row.${javaField}!=null"
+                   :download="getFileName(scope.row.${javaField})"
+                   :href="baseUrl+scope.row.${javaField}"
+                   :underline="false"
+                   target="_blank"
+          >
+            <span style="cursor: pointer;"> 下载 </span>
+          </el-link>
+        </template>
+      </el-table-column>
 #elseif($column.list && "" != $column.dictType)
       <el-table-column label="${comment}" align="center" prop="${javaField}">
         <template slot-scope="scope">
@@ -148,7 +161,7 @@
         </template>
       </el-table-column>
 #elseif($column.list && "" != $javaField)
-      <el-table-column label="${comment}" align="center" prop="${javaField}" />
+      <el-table-column label="${comment}" :show-overflow-tooltip="true" align="center" prop="${javaField}" />
 #end
 #end
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -362,6 +375,12 @@ export default {
 #end
   data() {
     return {
+#foreach ($column in $columns)
+#if($column.list && $column.htmlType == "fileUpload")
+      baseUrl: process.env.VUE_APP_BASE_API,
+#break
+#end
+#end
       // 遮罩层
       loading: true,
       // 选中数组
@@ -453,6 +472,20 @@ export default {
         this.loading = false;
       });
     },
+#foreach ($column in $columns)
+#if($column.list && $column.htmlType == "fileUpload")
+      //获取文件名 此功能只可以下载只有一个文件的
+      getFileName(filePath) {
+        if (filePath == null) {
+          return
+        }
+        // 提取文件名或根据需求生成文件名
+        const fileName = filePath.substring(filePath.lastIndexOf('/') + 1)
+        return fileName
+      },
+#break
+#end
+#end
     // 取消按钮
     cancel() {
       this.open = false;
