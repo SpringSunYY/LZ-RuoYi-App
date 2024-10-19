@@ -110,11 +110,12 @@
           v-hasPermi="['${moduleName}:${businessName}:export']"
         >导出</el-button>
       </el-col>
-      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList"></right-toolbar>
+      <right-toolbar :showSearch.sync="showSearch" @queryTable="getList" :columns="columns"></right-toolbar>
     </el-row>
 
     <el-table v-loading="loading" :data="${businessName}List" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
+#set($index = 0)
 #foreach($column in $columns)
 #set($javaField=$column.javaField)
 #set($parentheseIndex=$column.columnComment.indexOf("（"))
@@ -124,21 +125,24 @@
 #set($comment=$column.columnComment)
 #end
 #if($column.pk)
-      <el-table-column label="${comment}" align="center" prop="${javaField}" />
+      <el-table-column label="${comment}" align="center" v-if="columns[${index}].visible" prop="${javaField}" />
+    #set($index = $index + 1)  ## 增加 index 的值
 #elseif($column.list && $column.htmlType == "datetime")
-      <el-table-column label="${comment}" align="center" prop="${javaField}" width="180">
+      <el-table-column label="${comment}" align="center" v-if="columns[${index}].visible" prop="${javaField}" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.${javaField}, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
+    #set($index = $index + 1)  ## 增加 index 的值
 #elseif($column.list && $column.htmlType == "imageUpload")
-      <el-table-column label="${comment}" align="center" prop="${javaField}" width="100">
+      <el-table-column label="${comment}" align="center" v-if="columns[${index}].visible" prop="${javaField}" width="100">
         <template slot-scope="scope">
           <image-preview :src="scope.row.${javaField}" :width="50" :height="50"/>
         </template>
       </el-table-column>
+    #set($index = $index + 1)  ## 增加 index 的值
 #elseif($column.list && $column.htmlType == "fileUpload")
-      <el-table-column label="${comment}" align="center" prop="${javaField}" width="100">
+      <el-table-column label="${comment}" align="center" v-if="columns[${index}].visible" prop="${javaField}" width="100">
         <template slot-scope="scope">
           <el-link v-show="scope.row.${javaField}!=null"
                    :download="getFileName(scope.row.${javaField})"
@@ -150,8 +154,9 @@
           </el-link>
         </template>
       </el-table-column>
+    #set($index = $index + 1)  ## 增加 index 的值
 #elseif($column.list && "" != $column.dictType)
-      <el-table-column label="${comment}" align="center" prop="${javaField}">
+      <el-table-column label="${comment}" align="center" v-if="columns[${index}].visible" prop="${javaField}">
         <template slot-scope="scope">
 #if($column.htmlType == "checkbox")
           <dict-tag :options="dict.type.${column.dictType}" :value="scope.row.${javaField} ? scope.row.${javaField}.split(',') : []"/>
@@ -160,8 +165,10 @@
 #end
         </template>
       </el-table-column>
+    #set($index = $index + 1)  ## 增加 index 的值
 #elseif($column.list && "" != $javaField)
-      <el-table-column label="${comment}" :show-overflow-tooltip="true" align="center" prop="${javaField}" />
+      <el-table-column label="${comment}" :show-overflow-tooltip="true" align="center" v-if="columns[${index}].visible" prop="${javaField}" />
+    #set($index = $index + 1)  ## 增加 index 的值
 #end
 #end
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
@@ -183,7 +190,7 @@
         </template>
       </el-table-column>
     </el-table>
-    
+
     <pagination
       v-show="total>0"
       :total="total"
@@ -381,6 +388,22 @@ export default {
 #break
 #end
 #end
+      //表格展示列
+#set($index = 0)
+      columns: [
+#foreach ($column in $columns)
+#set($parentheseIndex=$column.columnComment.indexOf("（"))
+#if($parentheseIndex != -1)
+#set($comment=$column.columnComment.substring(0, $parentheseIndex))
+#else
+#set($comment=$column.columnComment)
+#end
+#if($column.pk || $column.list)
+        { key: ${index}, label: '${comment}', visible: true },
+#set($index = $index + 1)  ## 增加 index 的值
+#end
+#end
+      ],
       // 遮罩层
       loading: true,
       // 选中数组
