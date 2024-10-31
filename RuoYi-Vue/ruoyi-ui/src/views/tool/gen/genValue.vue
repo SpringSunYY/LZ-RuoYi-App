@@ -105,14 +105,12 @@
 </template>
 
 <script>
-import { getGenTable, genValue } from '@/api/tool/gen'
-import { optionselect as getDictOptionselect } from '@/api/system/dict/type'
-import { listMenu as getMenuTreeselect } from '@/api/system/menu'
+import {getGenTable, genValue} from '@/api/tool/gen'
 import basicInfoForm from './basicInfoForm'
 import genInfoForm from './genInfoForm'
 
 export default {
-  name: 'GenEdit',
+  name: 'GenAddValue',
   components: {
     basicInfoForm,
     genInfoForm
@@ -128,16 +126,8 @@ export default {
       tabPosition: 'top',
       //生成字段数据
       tableColumnValues: [],
-      // 选中选项卡的 name
-      activeName: 'columnInfo',
-      // 表格的高度
-      tableHeight: document.documentElement.scrollHeight - 245 + 'px',
       // 表列信息
       columns: [],
-      // 字典信息
-      dictOptions: [],
-      // 菜单信息
-      menus: []
     }
   },
   created() {
@@ -159,14 +149,6 @@ export default {
         }))
         this.genInfo.tableName = res.data.info.tableName
       })
-      /** 查询字典下拉列表 */
-      getDictOptionselect().then(response => {
-        this.dictOptions = response.data
-      })
-      /** 查询菜单下拉列表 */
-      getMenuTreeselect().then(response => {
-        this.menus = this.handleTree(response.data, 'menuId')
-      })
     }
   },
   methods: {
@@ -183,14 +165,13 @@ export default {
         }
       }
       this.genInfo.tableColumnValues = this.tableColumnValues
-      console.log(this.genInfo)
       genValue(this.genInfo).then(res => {
         this.$message.success('成功')
       })
     },
     /** 关闭按钮 */
     close() {
-      const obj = { path: '/tool/gen', query: { t: Date.now(), pageNum: this.$route.query.pageNum } }
+      const obj = {path: '/tool/gen', query: {t: Date.now(), pageNum: this.$route.query.pageNum}}
       this.$tab.closeOpenPage(obj)
     }
   }
