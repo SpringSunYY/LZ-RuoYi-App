@@ -111,7 +111,7 @@ export default {
     flex-direction: column;
     align-items: center;
 
-    image {
+    .image {
       border-radius: 5px;
     }
   }

@@ -7,7 +7,7 @@
             :key="item.value"
             :index="index"
             :class="item.raw.cssClass"
-        />
+        >{{ item.label }}</span>
         <uni-tag
             v-else
             :type="item.raw.listClass"

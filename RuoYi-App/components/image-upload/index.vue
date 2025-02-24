@@ -1,6 +1,6 @@
 <template>
   <uni-file-picker v-if="!disabled" :auto-upload="true" :limit="limit" v-model="imageValue" fileMediatype="image"
-                   mode="grid" @select="select" @progress="progress" @success="success" @fail="fail"
+                   mode="grid" @select="select" @progress="progress" @success="success" @fail="fail" :showType="''"
                    :title="'最多选择' + limit + '张图片'"/>
   <view v-else class="preview">
     <img v-for="(item, i) in imageValue" @click="previewImage(item.url)" class="viewImg" :src="getImageUrl(item.url)"
@@ -67,7 +67,10 @@ export default {
           val.forEach((item) => {
             arr.push(item.url);
           });
-          const str = arr.join(",");
+          let str = arr.join(",");
+          if (this.limit === 1) {
+            str = arr[0]
+          }
           this.$emit("input", str); // 同步给父组件
         }
       },
@@ -76,6 +79,16 @@ export default {
     },
   },
   methods: {
+    getImageUrl(url) {
+      // 如果url为空，则返回空字符串
+      if (!url) {
+        return '';
+      }
+      if (!url.startsWith("http")) {
+        url = baseUrl + url
+      }
+      return url
+    },
     updata(filePath) {
       const that = this;
       // console.log('Bearer ' + getToken())
@@ -150,7 +163,7 @@ export default {
           urls: [url],
         });
       } catch (e) {
-        console.log('111')
+        // console.log('111')
       }
     },
   },
