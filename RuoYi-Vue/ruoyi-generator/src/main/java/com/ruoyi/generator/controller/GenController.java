@@ -237,7 +237,7 @@ public class GenController extends BaseController {
         IOUtils.write(data, response.getOutputStream());
     }
 
-    @PreAuthorize("@ss.hasPermi('tool:gen:edit')")
+    @PreAuthorize("@ss.hasRole('admin')")
     @Log(title = "代码生成插入数据", businessType = BusinessType.INSERT)
     @PostMapping("/genValue")
     public AjaxResult genValue(@Validated @RequestBody GenInfo genInfo) {

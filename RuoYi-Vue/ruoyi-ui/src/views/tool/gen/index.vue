@@ -141,7 +141,7 @@
             size="small"
             icon="el-icon-edit"
             @click="handleGenValue(scope.row)"
-            v-hasPermi="['tool:gen:edit']"
+            v-has-role="['admin']"
           >生成数据
           </el-button>
           <el-button
