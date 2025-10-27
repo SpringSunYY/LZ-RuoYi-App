@@ -1,5 +1,5 @@
 
-
+const baseURL = process.env.VUE_APP_BASE_API
 /**
  * 通用js方法封装处理
  * Copyright (c) 2019 ruoyi
@@ -230,4 +230,25 @@ export function tansParams(params) {
 // 验证是否为blob格式
 export function blobValidate(data) {
   return data.type !== 'application/json'
+}
+
+
+//获取文件名
+export function getFileName(filePath) {
+  if (filePath == null) {
+    return
+  }
+  // 提取文件名或根据需求生成文件名
+  return filePath.substring(filePath.lastIndexOf('/') + 1)
+}
+
+//获取文件路径
+export function getFilePath(filePath) {
+  if (filePath == null) {
+    return
+  }
+  if (filePath.startsWith('http')) {
+    return filePath
+  }
+  return baseURL + filePath
 }
